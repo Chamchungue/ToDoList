@@ -11,16 +11,28 @@ use Psr\Http\Message\ResponseInterface as Response;
  */
 final class HomeAction
 {
+    /**
+     * @var \Slim\Views\Twig
+     */
     private $view;
 
+    /**
+     * @param Twig $view
+     */
     public function __construct(Twig $view)
     {
         $this->view = $view;
     }
 
-    public function dispatch(Request $request, Response $response, $args)
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
+    public function dispatch($request, $response, $args)
     {
-        $this->view->render($response, 'base.twig');
+        $this->view->render($response, 'html.twig');
         return $response;
     }
 }

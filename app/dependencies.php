@@ -26,3 +26,7 @@ $container['view'] = function ($c) {
 $container['App\Action\HomeAction'] = function ($c) {
     return new App\Action\HomeAction($c->get('view'));
 };
+
+$container['App\Action\TicketAction'] = function ($c) {
+    return new App\Action\TicketAction($c->get('view'));
+};

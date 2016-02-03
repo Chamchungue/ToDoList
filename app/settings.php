@@ -6,9 +6,9 @@ return [
         'displayErrorDetails' => true,
         // View settings
         'view' => [
-            'template_path' => __DIR__ . '/templates',
+            'template_path' => ROOT_DIR . '/app/templates',
             'twig' => [
-                'cache' => __DIR__ . '/../cache/twig',
+                'cache' => ROOT_DIR . '/cache/twig',
                 'debug' => true,
                 'auto_reload' => true,
             ],

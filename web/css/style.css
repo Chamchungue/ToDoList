@@ -16,3 +16,24 @@ h1 {
     font-weight: 200;
     margin-bottom: 0;
 }
+
+li.ticket {
+    list-style-type:none;
+    display: inline-block;
+    background-color: grey;
+    width: 300px;
+    margin: 15px;
+}
+
+    .close {
+        background-image: url('/../img/close.png');
+        width: 20px;
+        height: 20px;
+        position: relative;
+        top: -5px;
+        right: -145px;
+    }
+
+.large {
+    font-size: 15px;
+}

@@ -1,21 +1,21 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+define("ROOT_DIR", __DIR__.'/..');
 
-session_start();
+require ROOT_DIR . '/vendor/autoload.php';
 
 // Instantiate the app
-$settings = require __DIR__ . '/../app/settings.php';
+$settings = require ROOT_DIR . '/app/settings.php';
 $app = new \Slim\App($settings);
 
 // Set up dependencies
-require __DIR__ . '/../app/dependencies.php';
+require ROOT_DIR . '/app/dependencies.php';
 
 // Register middleware
-require __DIR__ . '/../app/middleware.php';
+require ROOT_DIR . '/app/middleware.php';
 
 // Register routes
-require __DIR__ . '/../app/routes.php';
+require ROOT_DIR . '/app/routes.php';
 
 // Run!
 $app->run();
