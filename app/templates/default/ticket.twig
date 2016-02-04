@@ -1,1 +1,6 @@
-<li></li>
+<li class="ticket" data-id="{{ ticket.id }}">
+    <img class="close" src="{{ base_url() }}/img/close.png" data-url="{{ path_for('ticket-remove') }}"/>
+    <h3>{{ ticket.summary }}</h3>
+    <p>{{ ticket.description }}</p>
+    <p>{{ ticket.createDate }}</p>
+</li>

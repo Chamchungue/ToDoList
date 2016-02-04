@@ -25,15 +25,14 @@ li.ticket {
     margin: 15px;
 }
 
+    h3 {
+        margin: 0px;
+    }
+
     .close {
-        background-image: url('/../img/close.png');
         width: 20px;
         height: 20px;
         position: relative;
-        top: -5px;
-        right: -145px;
+        top: -7px;
+        right: -147px;
     }
-
-.large {
-    font-size: 15px;
-}

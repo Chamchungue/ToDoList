@@ -1,5 +1,5 @@
 <?php
-// DIC configuration
+// Dependency injection container configuration
 
 $container = $app->getContainer();
 
