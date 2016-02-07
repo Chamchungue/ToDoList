@@ -1,40 +1,31 @@
 <?php
-
 namespace App\Action;
 
 use Slim\Views\Twig as Twig;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use App\Entity\Ticket as Ticket;
+use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper as EntityManagerHelper;
 
 class TicketAction
 {
-    private $view;
     /**
-     * @var string
+     * @var \Slim\Views\Twig
      */
-    public $summary;
-
+    protected $view;
     /**
-     * @var string
+     * @var \Doctrine\ORM\EntityManagerInterface
      */
-    public $description;
-
-    /**
-     * @var \DateTime
-     */
-    public $createDate;
-
-    /**
-     * @var \DateTime
-     */
-    public $dueDate;
+    protected $em;
 
     /**
      * @param Twig $view
+     * @param EntityManagerHelper $em
      */
-    public function __construct(Twig $view)
+    public function __construct(Twig $view, EntityManagerHelper $em)
     {
         $this->view = $view;
+        $this->em = $em->getEntityManager();
     }
 
     /**
@@ -43,9 +34,16 @@ class TicketAction
      * @param $args
      * @return Response
      */
-    public function load(Request $request, Response $response, $args)
+    public function liste(Request $request, Response $response, $args)
     {
-        $this->render( $response);
+
+        $tickets = $this->em->getRepository('App\Entity\Ticket')->findAll();
+        /**
+         * @var Ticket $ticket
+         */
+        foreach ($tickets as $ticket) {
+            $this->render($response, $ticket);
+        }
         return $response;
     }
 
@@ -57,7 +55,36 @@ class TicketAction
      */
     public function save(Request $request, Response $response, $args)
     {
-        $this->render( $response);
+        $id = $request->getHeader('id')[0];
+        $summary = $request->getHeader('summary')[0];
+        $description = $request->getHeader('description')[0];
+        $dueDate = $request->getHeader('dueDate')[0];
+        /**
+         * @var Ticket $ticket ;
+         */
+        $ticket = null;
+        if ($id) {
+            $ticket = $this->em->find('App\Entity\Ticket', $id);
+        } else {
+            $ticket = new Ticket();
+        }
+        $ticket->setSummary($summary ? $summary : 'Summary Summary Summary Summary');
+        $ticket->setDescription(
+            $description ? $description : rand(
+                0,
+                1
+            ) > 0.5 ? 'Description Description Description Description Description Description' : null
+        );
+        $ticket->setDueDate(
+            $dueDate ? $dueDate : rand(0, 1) > 0.5 ? date_create()->setTime(0, 0, 0)->add(
+                new \DateInterval('P' . rand(0, 3) . 'D')
+            ) : null
+        );
+
+        $this->em->persist($ticket);
+        $this->em->flush();
+
+        $this->render($response, $ticket);
         return $response;
     }
 
@@ -69,17 +96,26 @@ class TicketAction
      */
     public function remove(Request $request, Response $response, $args)
     {
+        foreach (explode(',',$request->getHeader('id')[0]) as $id) {
+            $ticket = $this->em->find('App\Entity\Ticket', $id);
+            $this->em->remove($ticket);
+            $this->em->flush();
+        }
         return $response;
     }
 
     /**
      * @param Response $response
+     * @param Ticket $ticket
      */
-    private function render(Response $response)
+    protected function render(Response $response, Ticket $ticket)
     {
-        $this->view->render($response, 'default/ticket.twig', [
-                'title'=>'title',
-                'content'=>'content'
-            ]);
+        $this->view->render(
+            $response,
+            'default/ticket.twig',
+            [
+                'ticket' => $ticket
+            ]
+        );
     }
 }

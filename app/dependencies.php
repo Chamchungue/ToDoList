@@ -19,6 +19,9 @@ $container['view'] = function ($c) {
     return $view;
 };
 
+// Doctrine
+$container['doctrine'] = require ROOT_DIR . '/config/cli-config.php';
+
 // -----------------------------------------------------------------------------
 // Action factories
 // -----------------------------------------------------------------------------
@@ -26,7 +29,6 @@ $container['view'] = function ($c) {
 $container['App\Action\HomeAction'] = function ($c) {
     return new App\Action\HomeAction($c->get('view'));
 };
-
 $container['App\Action\TicketAction'] = function ($c) {
-    return new App\Action\TicketAction($c->get('view'));
+    return new App\Action\TicketAction($c->get('view'), $c->get('doctrine')->get('em'));
 };
