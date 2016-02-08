@@ -1,3 +1,5 @@
+var wait = $("<div class='hidden'>Wait a moment</div>");
+
 function deleteElement(tickets, url, methode) {
     var data = {id: []};
     for (var i = 0; i < tickets.length; i++) {
@@ -17,8 +19,10 @@ function deleteElement(tickets, url, methode) {
             console.log('Impossible de supprimer ce ticket');
         },
         beforeSend: function () {
+            tickets.closest().prepend(wait);
         },
-        terminate: function () {
+        complete: function () {
+            wait.detach();
         }
     });
 }
@@ -81,53 +85,165 @@ function stopSelected() {
 }
 
 function editTicket(element) {
-    alert('test');
+    alert('editTicket');
 }
 
 function getTime() {
     return new Date().getTime();
 }
 
+var form = {
+    summary: {text: 'Summary', node: $('#summary')},
+    description: {text: 'Description', node: $('#description')}
+};
+
+function isUnEditForm(o, node) {
+    return( node.val().trim() == '' || node.val().trim() == o['text'] && node.css("color") != 'rgb(0, 0, 0)')
+}
+
+function loadForm() {
+    function setForm(o) {
+        function setTextAndColor(node, text, force) {
+            if (force || isUnEditForm(o, node)) {
+                node.val(text);
+                node.css({color: text ? '#aaa' : '#000'});
+            }
+        }
+
+        setTextAndColor(o['node'], o['text'], true);
+        o['node'].on({
+            focusin: function () {
+                setTextAndColor(o['node'], '');
+            },
+            focusout: function () {
+                setTextAndColor(o['node'], o['text']);
+            }
+        });
+    }
+
+    setForm(form.summary);
+    setForm(form.description);
+    $('#dueDate').val('');
+}
+
+function toggleForm(element) {
+    $('.listTickets').toggle();
+    $('.form').toggleClass('hidden');
+    element.text(element.text() == 'Back' ? 'Add' : 'Back');
+    loadForm();
+}
+
+function hideForm() {
+    $('.listTickets').show();
+    $('.form').addClass('hidden');
+    $('.addTicket').text('Add');
+}
+
+function checkTicket(element) {
+    var divAlert = $('<div class="alert">Field missing</div>');
+    var summaryNode = element.find('#summary');
+    var summary = "";
+    if (isUnEditForm(form.summary, summaryNode)) {
+        divAlert.hide();
+        summaryNode.after(divAlert);
+        divAlert.slideDown(500);
+        divAlert.delay(3000).slideUp(500);
+        return null;
+    } else {
+        summary = summaryNode.val().trim();
+    }
+    var descriptionNode = element.find('#description');
+    var description = "";
+    if (!isUnEditForm(form.description, descriptionNode)) {
+        description = descriptionNode.val().replace(new RegExp('\n', 'gi'), '<br/>');
+    }
+    var dueDate = element.find('#dueDate').val();
+    return {
+        summary: summary,
+        description: description,
+        dueDate: dueDate
+    };
+}
+
+function addNewTicket(element, o) {
+    var div = $('div.listTickets');
+    $.ajax({
+        type: element.data('method'),
+        url: element.data('url'),
+        data: o,
+        headers: o,
+        success: function (response) {
+            hideForm();
+            appendTickets(div, $(response));
+        },
+        error: function (request, errorCode, errorText) {
+            var error = $('<div>Impossible de créer ce ticket</div>');
+            error.hide();
+            element.after(error);
+            error.slideDown(500);
+            error.delay(1000).slideUp(500);
+        },
+        beforeSend: function () {
+            div.prepend(wait);
+        },
+        complete: function () {
+            wait.detach();
+        }
+    });
+}
+
+function appendTickets(parent, tickets) {
+    parent.append(tickets);
+    tickets.ready(function () {
+        addDeleteEvent(tickets);
+        addClickEvent(tickets)
+    });
+}
+
 $(document).ready(function () {
     var div = $('div.listTickets');
 
-    function appendAjax(element) {
+    function getTickets(element) {
         stopSelected();
         $.ajax({
             type: element.data('method'),
             url: element.data('url'),
             data: {},
             success: function (response) {
-                var result = $(response);
-                div.append(result);
-                result.ready(function () {
-                    addDeleteEvent(result);
-                    addClickEvent(result)
-                });
+                appendTickets(div, $(response));
             },
             error: function (request, errorCode, errorText) {
                 console.log(errorCode + "\n" + errorText);
             },
             beforeSend: function () {
+                div.append(wait);
             },
-            terminate: function () {
+            complete: function () {
+                wait.detach();
             }
         });
     }
 
-    appendAjax(div);
+    getTickets(div);
     $('.addTicket').on('click', function () {
-        $('.listTickets').toggle();
-        $('.form').toggle();
-        //appendAjax($(this));
+        toggleForm($(this));
     });
     $('.getTickets').on('click', function () {
-        $('.listTickets').show();
-        $('.form').hide();
+        hideForm();
         div.find('.ticket').remove();
-        appendAjax($(this));
+        getTickets($(this));
     });
     $('.deleteTickets').on('click', function () {
         deleteElement($('.selected'), $(this).data('url'), $(this).data('method'));
+    });
+    $('#submit').on('click', function () {
+        var newTicket = $(this).closest('#newTicket');
+        var properties = checkTicket(newTicket);
+        if (properties) {
+            addNewTicket($(this), properties);
+        }
+    });
+    $('#dueDate').on('focusin', function () {
+        $(this).datepicker({ dateFormat: 'dd/mm/yy' });
     });
 });

@@ -57,7 +57,7 @@ class Ticket
      */
     public function getDescription()
     {
-        return $this->description;
+        return str_replace('&lt;br/&gt;', '<br/>', htmlspecialchars($this->description));
     }
 
     /**

@@ -1,9 +1,11 @@
 <div class="ticket" data-id="{{ ticket.id }}" data-url="{{ path_for('ticket-save') }}" data-method="PUT">
-    <img class="close" src="{{ base_url() }}/img/close.png" data-url="{{ path_for('ticket-remove') }}" data-method="DELETE"/>
+    <img class="close" src="{{ base_url() }}/img/close.png" data-url="{{ path_for('ticket-remove') }}"
+         data-method="DELETE"/>
     <h3 class="summary">{{ ticket.summary }}</h3>
-    {% if ticket.description %}<p class="description">{{ ticket.description }}</p>{% endif %}
-    {% if ticket.dueDate %}<p class="dueDate{% if ticket.dueDate|date("Ymd") < "now"|date("Ymd") %} red{% elseif ticket.dueDate|date("Ymd") == "now"|date("Ymd") %} bold{% endif %}">
+    {% if ticket.description %}<p class="description">{{ ticket.description|raw }}</p>{% endif %}
+    {% if ticket.dueDate %}<p
+        class="dueDate{% if ticket.dueDate|date("Ymd") < "now"|date("Ymd") %} red{% elseif ticket.dueDate|date("Ymd") == "now"|date("Ymd") %} bold{% endif %}">
         {{ ticket.dueDate|date("d/m/Y") }}
-    </p>{% endif %}
+        </p>{% endif %}
     <p class="createDate">{{ ticket.createDate|date("d/m/Y H:i") }}</p>
 </div>

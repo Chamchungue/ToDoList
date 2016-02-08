@@ -36,7 +36,6 @@ class TicketAction
      */
     public function liste(Request $request, Response $response, $args)
     {
-
         $tickets = $this->em->getRepository('App\Entity\Ticket')->findAll();
         /**
          * @var Ticket $ticket
@@ -68,18 +67,9 @@ class TicketAction
         } else {
             $ticket = new Ticket();
         }
-        $ticket->setSummary($summary ? $summary : 'Summary Summary Summary Summary');
-        $ticket->setDescription(
-            $description ? $description : rand(
-                0,
-                1
-            ) > 0.5 ? 'Description Description Description Description Description Description' : null
-        );
-        $ticket->setDueDate(
-            $dueDate ? $dueDate : rand(0, 1) > 0.5 ? date_create()->setTime(0, 0, 0)->add(
-                new \DateInterval('P' . rand(0, 3) . 'D')
-            ) : null
-        );
+        $ticket->setSummary($summary);
+        $ticket->setDescription($description);
+        $ticket->setDueDate($dueDate ? date_create_from_format('j/m/Y', $dueDate) : null);
 
         $this->em->persist($ticket);
         $this->em->flush();
@@ -96,7 +86,7 @@ class TicketAction
      */
     public function remove(Request $request, Response $response, $args)
     {
-        foreach (explode(',',$request->getHeader('id')[0]) as $id) {
+        foreach (explode(',', $request->getHeader('id')[0]) as $id) {
             $ticket = $this->em->find('App\Entity\Ticket', $id);
             $this->em->remove($ticket);
             $this->em->flush();
