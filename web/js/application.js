@@ -158,10 +158,10 @@ var nsApp = {
             description: ticket.find('.description').html(), // to keep html tags
             dueDate: ticket.find('.dueDate').text()
         };
-        for( var prop in data) {
+        for (var prop in data) {
             var value = data[prop];
-            if( !value || typeof value != 'string') continue;
-            value = value.replace( new RegExp('<br((\/)|( \/))?>', 'g'), '\n');
+            if (!value || typeof value != 'string') continue;
+            value = value.replace(new RegExp('<br((\/)|( \/))?>', 'g'), '\n');
             value = value.decodeHTML();
             data[prop] = value.trim();
         }
@@ -184,20 +184,20 @@ var nsApp = {
         return( node.val().trim() == '' || node.val().trim() == o['text'] && node.css("color") != 'rgb(0, 0, 0)')
     },
     /**
-     * Load unedited form
+     * Load form
      * @param [data]
      */
-    loadForm: function ( data) {
+    loadForm: function (data) {
         data = data || {};
         function setForm(o, value) {
-            function setTextAndColor(node, text, force) {
+            function setTextAndColor(node, text, force, forced) {
                 if (force || nsApp.isUnEditForm(o, node)) {
-                    node.val(text);
-                    node.css({color: text == o['text'] ? '#aaa' : '#000'});
+                    node.val(forced || text);
+                    node.css({color: !forced && text == o['text'] ? '#aaa' : '#000'});
                 }
             }
 
-            setTextAndColor(o['node'], value || o['text'], true);
+            setTextAndColor(o['node'], o['text'], true, value);
             o['node'].on({
                 focusin: function () {
                     setTextAndColor(o['node'], '');
@@ -208,7 +208,7 @@ var nsApp = {
             });
         }
 
-        $('#newTicket').data('id', data['id']);
+        $('#newTicket').data('id', data['id'] || '');
         setForm(constApp.form.summary, data['summary']);
         setForm(constApp.form.description, data['description']);
         $('#dueDate').val(data['dueDate']);
@@ -235,11 +235,11 @@ var nsApp = {
      * Show the form
      * @param [data]
      */
-    showForm: function ( data) {
+    showForm: function (data) {
         $('.listTickets').hide();
         $('.form').removeClass('hidden');
         $('.addTicket').text('Back');
-        this.loadForm( data);
+        this.loadForm(data);
     },
     /**
      * Check and return data if they are valid
@@ -369,8 +369,8 @@ var nsApp = {
     /**
      * Add document event
      */
-    eventDocument: function() {
-        $(document).on( 'click', function() {
+    eventDocument: function () {
+        $(document).on('click', function () {
             nsApp.stopSelected();
         });
     },
@@ -403,11 +403,11 @@ var nsApp = {
     }
 };
 
-String.prototype.decodeHTML = function() {
-    var map = {"gt":">", "lt":"<", "amp":"&" /* , … */};
-    return this.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z]+);?/gi, function($0, $1) {
+String.prototype.decodeHTML = function () {
+    var map = {"gt": ">", "lt": "<", "amp": "&" /* , … */};
+    return this.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z]+);?/gi, function ($0, $1) {
         if ($1[0] === "#") {
-            return String.fromCharCode($1[1].toLowerCase() === "x" ? parseInt($1.substr(2), 16)  : parseInt($1.substr(1), 10));
+            return String.fromCharCode($1[1].toLowerCase() === "x" ? parseInt($1.substr(2), 16) : parseInt($1.substr(1), 10));
         } else {
             return map.hasOwnProperty($1) ? map[$1] : $0;
         }
