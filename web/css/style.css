@@ -181,10 +181,6 @@ p.createDate {
 }
 
 @media (max-width: 500px) {
-    .close {
-        display: none;
-    }
-
     .ticket {
         width: 90%;
     }

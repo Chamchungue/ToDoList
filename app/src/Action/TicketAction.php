@@ -59,27 +59,36 @@ class TicketAction
      */
     public function save(Request $request, Response $response, $args)
     {
-        $id = $request->getHeader('id')[0];
-        $summary = $request->getHeader('summary')[0];
-        $description = $request->getHeader('description')[0];
-        $dueDate = $request->getHeader('dueDate')[0];
-        /**
-         * @var Ticket $ticket ;
-         */
-        $ticket = null;
-        if ($id) {
-            $ticket = $this->em->find('App\Entity\Ticket', $id);
+        $id = trim($request->getHeader('id')[0]);
+        $summary = trim($request->getHeader('summary')[0]);
+        $description = trim($request->getHeader('description')[0]);
+        $dueDate = trim($request->getHeader('dueDate')[0]);
+
+        if( !$summary) {
+            $response->withStatus(500);
         } else {
-            $ticket = new Ticket();
+            try{
+                /**
+                 * @var Ticket $ticket ;
+                 */
+                $ticket = null;
+                if ($id) {
+                    $ticket = $this->em->find('App\Entity\Ticket', $id);
+                } else {
+                    $ticket = new Ticket();
+                }
+                $ticket->setSummary($summary);
+                $ticket->setDescription($description);
+                $ticket->setDueDate($dueDate ? date_create_from_format('j/m/Y', $dueDate) : null);
+
+                $this->em->persist($ticket);
+                $this->em->flush();
+
+                $this->render($response, $ticket);
+            } catch( \Exception $e) {
+                $response->withStatus(500);
+            }
         }
-        $ticket->setSummary($summary);
-        $ticket->setDescription($description);
-        $ticket->setDueDate($dueDate ? date_create_from_format('j/m/Y', $dueDate) : null);
-
-        $this->em->persist($ticket);
-        $this->em->flush();
-
-        $this->render($response, $ticket);
         return $response;
     }
 

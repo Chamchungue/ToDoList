@@ -17,12 +17,12 @@ class Ticket
     protected $id;
 
     /**
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", length=70)
      */
     protected $summary;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string", length=300, nullable=true)
      */
     protected $description;
 

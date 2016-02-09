@@ -1,12 +1,14 @@
 /**
  * Constants to application
- * @type {{wait: (*|jQuery|HTMLElement), form: {summary: {text: string, node: (*|jQuery|HTMLElement)}, description: {text: string, node: (*|jQuery|HTMLElement)}}}}
+ * @type {{wait: (*|jQuery|HTMLElement), remove: (*|jQuery|HTMLElement), alertMaxLength: (*|jQuery|HTMLElement), form: {summary: {text: string, node: (*|jQuery|HTMLElement), maxLength: number}, description: {text: string, node: (*|jQuery|HTMLElement), maxLength: number}}}}
  */
 var constApp = {
     wait: $("<div>Wait a moment</div>"),
+    remove: $("<div class='hidden'>Suppression done</div>"),
+    alertMaxLength: $("<div class='hidden'>Exceeded maximum size</div>"),
     form: {
-        summary: {text: 'Summary', node: $('#summary')},
-        description: {text: 'Description', node: $('#description')}
+        summary: {text: 'Summary', node: $('#summary'), maxLength: 70},
+        description: {text: 'Description', node: $('#description'), maxLength: 300}
     }
 };
 
@@ -54,6 +56,9 @@ var nsApp = {
             data: data,
             headers: data,
             success: function (response) {
+                nsApp.ticketsParentElement.prepend(constApp.remove);
+                constApp.remove.slideDown(500);
+                constApp.remove.delay(1000).slideUp(1000);
                 tickets.remove();
                 nsApp.stopSelected();
             },
@@ -200,10 +205,20 @@ var nsApp = {
             setTextAndColor(o['node'], o['text'], true, value);
             o['node'].on({
                 focusin: function () {
-                    setTextAndColor(o['node'], '');
+                    setTextAndColor($(this), '');
                 },
                 focusout: function () {
-                    setTextAndColor(o['node'], o['text']);
+                    setTextAndColor($(this), o['text']);
+                },
+                keydown: function () {
+                    if( $(this).val().length >= o['maxLength']) {
+                        $(this).after(constApp.alertMaxLength);
+                        $(this).val($(this).val().substr(0, o['maxLength']));
+                        constApp.alertMaxLength.slideDown(300);
+                    }
+                },
+                keyup: function () {
+                    constApp.alertMaxLength.slideUp(500);
                 }
             });
         }
@@ -290,17 +305,18 @@ var nsApp = {
                 nsApp.getTickets(nsApp.ticketsParentElement);
             },
             error: function (request, errorCode, errorText) {
-                var error = $('<div>Impossible de créer ce ticket</div>');
-                error.hide();
+                var error = $('<div class="hidden">Impossible de créer ce ticket</div>');
                 element.after(error);
                 error.slideDown(500);
                 error.delay(1000).slideUp(500);
             },
             beforeSend: function () {
+                element.off();
                 nsApp.ticketsParentElement.prepend(constApp.wait);
             },
             complete: function () {
                 constApp.wait.detach();
+                nsApp.eventSubmitForm();
             }
         });
     },
@@ -363,7 +379,9 @@ var nsApp = {
      */
     eventDeleteTickets: function () {
         $('.deleteTickets').on('click', function () {
-            nsApp.deleteElement($('.selected'), $(this));
+            if( confirm('Are you sure you want to delete these tickets ?')) {
+                nsApp.deleteElement($('.selected'), $(this));
+            }
         });
     },
     /**
