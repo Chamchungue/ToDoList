@@ -3,7 +3,7 @@ return [
     'settings' => [
         // Slim Settings
         'determineRouteBeforeAppMiddleware' => false,
-        'displayErrorDetails' => true,
+        'displayErrorDetails' => false,
         // View settings
         'view' => [
             'template_path' => __DIR__.'/../app/templates',

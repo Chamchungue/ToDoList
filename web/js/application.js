@@ -1,3 +1,7 @@
+/**
+ * Constants to application
+ * @type {{wait: (*|jQuery|HTMLElement), form: {summary: {text: string, node: (*|jQuery|HTMLElement)}, description: {text: string, node: (*|jQuery|HTMLElement)}}}}
+ */
 var constApp = {
     wait: $("<div>Wait a moment</div>"),
     form: {
@@ -5,33 +9,48 @@ var constApp = {
         description: {text: 'Description', node: $('#description')}
     }
 };
+
 $(document).ready(function () {
-    var div = $('div.listTickets');
+    // Initiate namespace
+    nsApp.setTicketsParentElement($('.listTickets'));
 
-    nsApp.getTickets(div, div);
+    // First tickets loading
+    nsApp.getTickets(nsApp.ticketsParentElement);
 
+    // Initiate events
     nsApp.eventAddTicket();
-    nsApp.eventGetTickets(div);
+    nsApp.eventGetTickets();
     nsApp.eventDeleteTickets();
     nsApp.eventForm();
 });
 
+/**
+ * Namespace to application
+ * @type {{ticketsParentElement: (*|jQuery|HTMLElement), setTicketsParentElement: setTicketsParentElement, deleteElement: deleteElement, eventDeleteTicket: eventDeleteTicket, eventTicket: eventTicket, startSelected: startSelected, stopSelected: stopSelected, editTicket: editTicket, getTime: getTime, isUnEditForm: isUnEditForm, loadForm: loadForm, toggleForm: toggleForm, hideForm: hideForm, showForm: showForm, checkTicket: checkTicket, addNewTicket: addNewTicket, appendTickets: appendTickets, getTickets: getTickets, eventAddTicket: eventAddTicket, eventGetTickets: eventGetTickets, eventDeleteTickets: eventDeleteTickets, eventForm: eventForm, eventSubmitForm: eventSubmitForm, eventDueDateForm: eventDueDateForm}}
+ */
 var nsApp = {
+    ticketsParentElement: null,
     /**
-     *
-     * @param tickets
-     * @param url
-     * @param methode
+     * initiate the parent element of tickets
+     * @param ticketsParentElement : (*|jQuery|HTMLElement)
      */
-    deleteElement: function (tickets, url, methode) {
+    setTicketsParentElement: function (ticketsParentElement) {
+        this.ticketsParentElement = ticketsParentElement;
+    },
+    /**
+     * Delete the tickets given
+     * @param tickets Tickets to remove
+     * @param element element keeping the url and method
+     */
+    deleteElement: function (tickets, element) {
         var data = {id: []};
         for (var i = 0; i < tickets.length; i++) {
             var ticket = tickets.get(i);
             data.id[i] = $(ticket).data('id');
         }
         $.ajax({
-            type: methode || 'DELETE',
-            url: url,
+            type: element.data('method'),
+            url: element.data('url'),
             data: data,
             headers: data,
             success: function (response) {
@@ -57,7 +76,7 @@ var nsApp = {
         });
     },
     /**
-     *
+     * Add delete event on .close element
      * @param parents
      */
     eventDeleteTicket: function (parents) {
@@ -65,33 +84,35 @@ var nsApp = {
         closeElement.on({
             click: function () {
                 var closeElement = $(this);
-                event.stopImmediatePropagation();
-                event.stopPropagation();
                 var ticket = closeElement.parent();
-                nsApp.deleteElement(ticket, closeElement.data('url'), closeElement.data('method'));
+                nsApp.deleteElement(ticket, closeElement);
             },
             mouseenter: function () {
                 $(this).parent().off();
             },
             mouseleave: function () {
-                nsApp.eventClickTicket($(this).parent());
+                nsApp.eventTicket($(this).parent());
             }
         });
     },
     /**
-     *
-     * @param element
+     * Add click event on tickets
+     * @param tickets
      */
-    eventClickTicket: function (element) {
+    eventTicket: function (tickets) {
         var start;
-        element.on({
+        tickets.on({
             mousedown: function () {
                 if (!$(this).hasClass('toSelect')) {
                     start = nsApp.getTime();
                 }
             },
+            mouseenter: function () {
+                $(document).off();
+            },
             mouseleave: function () {
                 start = 0;
+                nsApp.eventDocument();
             },
             mouseup: function () {
                 if (!$(this).hasClass('toSelect')) {
@@ -108,7 +129,7 @@ var nsApp = {
         });
     },
     /**
-     *
+     * start multi-select event
      * @param element
      */
     startSelected: function (element) {
@@ -118,7 +139,7 @@ var nsApp = {
         $('.deleteTickets').addClass('showAction');
     },
     /**
-     *
+     * stop multi-select event
      */
     stopSelected: function () {
         $('.deleteTickets').removeClass('showAction');
@@ -127,21 +148,34 @@ var nsApp = {
         $('.close').show();
     },
     /**
-     *
-     * @param element
+     * Open editing ticket
+     * @param ticket
      */
-    editTicket: function (element) {
-        alert('editTicket');
+    editTicket: function (ticket) {
+        var data = {
+            id: ticket.data('id'),
+            summary: ticket.find('.summary').text(),
+            description: ticket.find('.description').html(), // to keep html tags
+            dueDate: ticket.find('.dueDate').text()
+        };
+        for( var prop in data) {
+            var value = data[prop];
+            if( !value || typeof value != 'string') continue;
+            value = value.replace( new RegExp('<br((\/)|( \/))?>', 'g'), '\n');
+            value = value.decodeHTML();
+            data[prop] = value.trim();
+        }
+        this.showForm(data);
     },
     /**
-     *
+     * Gets current time
      * @returns {number}
      */
     getTime: function () {
         return new Date().getTime();
     },
     /**
-     *
+     * Checks if node has been modified
      * @param o
      * @param node
      * @returns {boolean}
@@ -150,18 +184,20 @@ var nsApp = {
         return( node.val().trim() == '' || node.val().trim() == o['text'] && node.css("color") != 'rgb(0, 0, 0)')
     },
     /**
-     *
+     * Load unedited form
+     * @param [data]
      */
-    loadForm: function () {
-        function setForm(o) {
+    loadForm: function ( data) {
+        data = data || {};
+        function setForm(o, value) {
             function setTextAndColor(node, text, force) {
                 if (force || nsApp.isUnEditForm(o, node)) {
                     node.val(text);
-                    node.css({color: text ? '#aaa' : '#000'});
+                    node.css({color: text == o['text'] ? '#aaa' : '#000'});
                 }
             }
 
-            setTextAndColor(o['node'], o['text'], true);
+            setTextAndColor(o['node'], value || o['text'], true);
             o['node'].on({
                 focusin: function () {
                     setTextAndColor(o['node'], '');
@@ -172,22 +208,23 @@ var nsApp = {
             });
         }
 
-        setForm(constApp.form.summary);
-        setForm(constApp.form.description);
-        $('#dueDate').val('');
+        $('#newTicket').data('id', data['id']);
+        setForm(constApp.form.summary, data['summary']);
+        setForm(constApp.form.description, data['description']);
+        $('#dueDate').val(data['dueDate']);
     },
     /**
-     *
-     * @param element
+     * Toggle the form
      */
-    toggleForm: function (element) {
+    toggleForm: function () {
+        var addTicket = $('.addTicket');
+        addTicket.text(addTicket.text() == 'Back' ? 'Add' : 'Back');
         $('.listTickets').toggle();
         $('.form').toggleClass('hidden');
-        element.text(element.text() == 'Back' ? 'Add' : 'Back');
-        nsApp.loadForm();
+        this.loadForm();
     },
     /**
-     *
+     * Hide the form
      */
     hideForm: function () {
         $('.listTickets').show();
@@ -195,15 +232,25 @@ var nsApp = {
         $('.addTicket').text('Add');
     },
     /**
-     *
-     * @param element
-     * @returns {*}
+     * Show the form
+     * @param [data]
+     */
+    showForm: function ( data) {
+        $('.listTickets').hide();
+        $('.form').removeClass('hidden');
+        $('.addTicket').text('Back');
+        this.loadForm( data);
+    },
+    /**
+     * Check and return data if they are valid
+     * @param element element with data
+     * @returns {*} data to send
      */
     checkTicket: function (element) {
         var divAlert = $('<div class="alert">Field missing</div>');
         var summaryNode = element.find('#summary');
         var summary = "";
-        if (nsApp.isUnEditForm(constApp.form.summary, summaryNode)) {
+        if (this.isUnEditForm(constApp.form.summary, summaryNode)) {
             divAlert.hide();
             summaryNode.after(divAlert);
             divAlert.slideDown(500);
@@ -214,31 +261,33 @@ var nsApp = {
         }
         var descriptionNode = element.find('#description');
         var description = "";
-        if (!nsApp.isUnEditForm(constApp.form.description, descriptionNode)) {
+        if (!this.isUnEditForm(constApp.form.description, descriptionNode)) {
             description = descriptionNode.val().replace(new RegExp('\n', 'gi'), '<br/>');
         }
         var dueDate = element.find('#dueDate').val();
+        var id = element.data('id');
         return {
+            id: id,
             summary: summary,
             description: description,
             dueDate: dueDate
         };
     },
     /**
-     *
-     * @param element
-     * @param o
+     * Create a new ticket with data
+     * @param element element keeping the url and method
+     * @param data data to send
      */
-    addNewTicket: function (element, o) {
-        var div = $('div.listTickets');
+    addNewTicket: function (element, data) {
         $.ajax({
             type: element.data('method'),
             url: element.data('url'),
-            data: o,
-            headers: o,
+            data: data,
+            headers: data,
             success: function (response) {
                 nsApp.hideForm();
-                nsApp.appendTickets(div, $(response));
+                nsApp.ticketsParentElement.find('.ticket').remove();
+                nsApp.getTickets(nsApp.ticketsParentElement);
             },
             error: function (request, errorCode, errorText) {
                 var error = $('<div>Impossible de créer ce ticket</div>');
@@ -248,7 +297,7 @@ var nsApp = {
                 error.delay(1000).slideUp(500);
             },
             beforeSend: function () {
-                div.prepend(constApp.wait);
+                nsApp.ticketsParentElement.prepend(constApp.wait);
             },
             complete: function () {
                 constApp.wait.detach();
@@ -256,36 +305,34 @@ var nsApp = {
         });
     },
     /**
-     *
-     * @param parent
+     * Append tickets and add events on them
      * @param tickets
      */
-    appendTickets: function (parent, tickets) {
-        parent.append(tickets);
+    appendTickets: function (tickets) {
+        this.ticketsParentElement.append(tickets);
         tickets.ready(function () {
             nsApp.eventDeleteTicket(tickets);
-            nsApp.eventClickTicket(tickets)
+            nsApp.eventTicket(tickets)
         });
     },
     /**
-     *
-     * @param parent
-     * @param element
+     * Getting all tickets
+     * @param element data url element
      */
-    getTickets: function (parent, element) {
-        nsApp.stopSelected();
+    getTickets: function (element) {
+        this.stopSelected();
         $.ajax({
             type: element.data('method'),
             url: element.data('url'),
             data: {},
             success: function (response) {
-                nsApp.appendTickets(parent, $(response));
+                nsApp.appendTickets($(response));
             },
             error: function (request, errorCode, errorText) {
                 console.log(errorCode + "\n" + errorText);
             },
             beforeSend: function () {
-                parent.append(constApp.wait);
+                nsApp.ticketsParentElement.append(constApp.wait);
             },
             complete: function () {
                 constApp.wait.detach();
@@ -293,41 +340,49 @@ var nsApp = {
         });
     },
     /**
-     *
+     * Add showing-form event
      */
     eventAddTicket: function () {
         $('.addTicket').on('click', function () {
-            nsApp.toggleForm($(this));
+            nsApp.toggleForm();
+            nsApp.stopSelected();
         });
     },
     /**
-     *
-     * @param div
+     * Add reloading event
      */
-    eventGetTickets: function (div) {
+    eventGetTickets: function () {
         $('.getTickets').on('click', function () {
             nsApp.hideForm();
-            div.find('.ticket').remove();
-            nsApp.getTickets(div, $(this));
+            nsApp.ticketsParentElement.find('.ticket').remove();
+            nsApp.getTickets($(this));
         });
     },
     /**
-     *
+     * Add deleting event
      */
     eventDeleteTickets: function () {
         $('.deleteTickets').on('click', function () {
-            nsApp.deleteElement($('.selected'), $(this).data('url'), $(this).data('method'));
+            nsApp.deleteElement($('.selected'), $(this));
         });
     },
     /**
-     *
+     * Add document event
+     */
+    eventDocument: function() {
+        $(document).on( 'click', function() {
+            nsApp.stopSelected();
+        });
+    },
+    /**
+     * Add events on form
      */
     eventForm: function () {
         this.eventDueDateForm();
         this.eventSubmitForm();
     },
     /**
-     *
+     * Add event on #submit
      */
     eventSubmitForm: function () {
         $('#submit').on('click', function () {
@@ -339,11 +394,22 @@ var nsApp = {
         });
     },
     /**
-     *
+     * Add event on #dueDate
      */
     eventDueDateForm: function () {
         $('#dueDate').on('focusin', function () {
             $(this).datepicker({ dateFormat: 'dd/mm/yy' });
         });
     }
+};
+
+String.prototype.decodeHTML = function() {
+    var map = {"gt":">", "lt":"<", "amp":"&" /* , … */};
+    return this.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z]+);?/gi, function($0, $1) {
+        if ($1[0] === "#") {
+            return String.fromCharCode($1[1].toLowerCase() === "x" ? parseInt($1.substr(2), 16)  : parseInt($1.substr(1), 10));
+        } else {
+            return map.hasOwnProperty($1) ? map[$1] : $0;
+        }
+    });
 };

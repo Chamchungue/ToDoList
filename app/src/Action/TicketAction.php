@@ -1,6 +1,7 @@
 <?php
 namespace App\Action;
 
+use Doctrine\ORM\EntityNotFoundException;
 use Slim\Views\Twig as Twig;
 use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -87,14 +88,19 @@ class TicketAction
      * @param Response $response
      * @param $args
      * @return Response
+     * @throws \Doctrine\ORM\EntityNotFoundException
      */
     public function remove(Request $request, Response $response, $args)
     {
         foreach (explode(',', $request->getHeader('id')[0]) as $id) {
             $ticket = $this->em->find('App\Entity\Ticket', $id);
-            $this->em->remove($ticket);
-            $this->em->flush();
+            if( $ticket) {
+                $this->em->remove($ticket);
+            } else {
+                throw new EntityNotFoundException;
+            }
         }
+        $this->em->flush();
         return $response;
     }
 
