@@ -7,6 +7,10 @@ use Psr\Http\Message\ResponseInterface as Response;
 use App\Entity\Ticket as Ticket;
 use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper as EntityManagerHelper;
 
+/**
+ * Class TicketAction
+ * @package App\Action
+ */
 class TicketAction
 {
     /**
