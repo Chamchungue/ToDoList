@@ -12,14 +12,3 @@ $app->put('/ticket/save', 'App\Action\TicketAction:save')
 
 $app->delete('/ticket/remove', 'App\Action\TicketAction:remove')
     ->setName('ticket-remove');
-
-$app->get(
-    '/phpInfo',
-    function ($request, $response) use ($app) {
-        if ($_SERVER["REMOTE_ADDR"] == '192.168.1.37') {
-            phpinfo();
-        } else {
-            $response->getHeader()->withStatus(500, 'Ressource interdite');
-        }
-    }
-)->setName('phpInfo');
