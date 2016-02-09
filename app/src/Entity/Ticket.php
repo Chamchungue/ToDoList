@@ -49,7 +49,7 @@ class Ticket
      */
     public function setDescription($description)
     {
-        $this->description = $description;
+        $this->description = utf8_encode($description);
     }
 
     /**
@@ -65,7 +65,7 @@ class Ticket
      */
     public function setSummary($summary)
     {
-        $this->summary = $summary;
+        $this->summary = utf8_encode($summary);
     }
 
     /**
