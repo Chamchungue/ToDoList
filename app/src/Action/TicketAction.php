@@ -94,7 +94,7 @@ class TicketAction
     {
         foreach (explode(',', $request->getHeader('id')[0]) as $id) {
             $ticket = $this->em->find('App\Entity\Ticket', $id);
-            if( $ticket) {
+            if ($ticket) {
                 $this->em->remove($ticket);
             } else {
                 throw new EntityNotFoundException;
